@@ -12,39 +12,22 @@ class FlutterSecureStorageWindows extends FlutterSecureStoragePlatform {
   }
 
   @override
-  Future<bool> containsKey({
-    required String key,
-    required Map<String, String> options,
-  }) =>
-      Future.value(false);
+  Future<bool> containsKey({required String key, required Map<String, String> options, required String targetPath}) => Future.value(false);
 
   @override
-  Future<void> delete({
-    required String key,
-    required Map<String, String> options,
-  }) =>
-      Future.value();
+  Future<void> delete({required String key, required Map<String, String> options, required String targetPath}) => Future.value();
 
   @override
-  Future<void> deleteAll({required Map<String, String> options}) => Future.value();
+  Future<void> deleteAll({required Map<String, String> options, required String targetPath}) => Future.value();
 
   @override
-  Future<String?> read({
-    required String key,
-    required Map<String, String> options,
-  }) =>
-      Future.value();
+  Future<String?> read({required String key, required Map<String, String> options, required String targetPath}) => Future.value();
 
   @override
-  Future<Map<String, String>> readAll({required Map<String, String> options}) => Future.value({});
+  Future<Map<String, String>> readAll({required Map<String, String> options, required String targetPath}) => Future.value({});
 
   @override
-  Future<void> write({
-    required String key,
-    required String value,
-    required Map<String, String> options,
-  }) =>
-      Future.value();
+  Future<void> write({required String key, required String value, required Map<String, String> options, required String targetPath}) => Future.value();
 
   // @override
   // Future<bool> isCupertinoProtectedDataAvailable() => Future.value(true);
@@ -72,28 +55,34 @@ abstract class FlutterSecureStoragePlatform extends PlatformInterface {
     required String key,
     required String value,
     required Map<String, String> options,
+    required String targetPath,
   });
 
   Future<String?> read({
     required String key,
     required Map<String, String> options,
+    required String targetPath,
   });
 
   Future<bool> containsKey({
     required String key,
     required Map<String, String> options,
+    required String targetPath,
   });
 
   Future<void> delete({
     required String key,
     required Map<String, String> options,
+    required String targetPath,
   });
 
   Future<Map<String, String>> readAll({
     required Map<String, String> options,
+    required String targetPath,
   });
 
   Future<void> deleteAll({
     required Map<String, String> options,
+    required String targetPath,
   });
 }

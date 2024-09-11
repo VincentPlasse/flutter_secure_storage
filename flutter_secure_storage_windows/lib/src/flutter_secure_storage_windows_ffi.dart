@@ -7,7 +7,6 @@ import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
 import 'package:flutter_secure_storage_windows/src/flutter_secure_storage_windows_stub.dart';
 import 'package:path/path.dart' as path;
-import 'package:path_provider/path_provider.dart';
 import 'package:win32/win32.dart';
 
 extension OptionsExtension on Map<String, String> {
@@ -35,8 +34,9 @@ class FlutterSecureStorageWindows extends FlutterSecureStoragePlatform {
   Future<bool> containsKey({
     required String key,
     required Map<String, String> options,
+    required String targetPath,
   }) async {
-    final map = await _storage.load(options);
+    final map = await _storage.load(options, targetPath);
     if (map.containsKey(key)) {
       return true;
     }
@@ -47,28 +47,30 @@ class FlutterSecureStorageWindows extends FlutterSecureStoragePlatform {
   Future<void> delete({
     required String key,
     required Map<String, String> options,
+    required String targetPath,
   }) async {
-    final map = await _storage.load(options);
+    final map = await _storage.load(options, targetPath);
     final initialSize = map.length;
     map.remove(key);
     if (map.length != initialSize) {
-      await _storage.save(map, options);
+      await _storage.save(map, options, targetPath);
     }
   }
 
   @override
-  Future<void> deleteAll({required Map<String, String> options}) async {
-    await _storage.clear(options);
+  Future<void> deleteAll({required Map<String, String> options, required String targetPath}) async {
+    await _storage.clear(options, targetPath);
   }
 
   @override
   Future<String?> read({
     required String key,
     required Map<String, String> options,
+    required String targetPath,
   }) async {
-    final map = await _storage.load(options);
+    final map = await _storage.load(options, targetPath);
 
-    var result = map[key];
+    final result = map[key];
 
     return result;
   }
@@ -76,15 +78,16 @@ class FlutterSecureStorageWindows extends FlutterSecureStoragePlatform {
   @override
   Future<Map<String, String>> readAll({
     required Map<String, String> options,
+    required String targetPath,
   }) async {
-    final map = await _storage.load(options);
+    final map = await _storage.load(options, targetPath);
     if (!options.useBackwardCompatibility) {
       // Just return a map.
       return map;
     }
 
     // Write back now, so the value should be retrieved from JSON file next.
-    await _storage.save(map, options);
+    await _storage.save(map, options, targetPath);
 
     return map;
   }
@@ -94,10 +97,11 @@ class FlutterSecureStorageWindows extends FlutterSecureStoragePlatform {
     required String key,
     required String value,
     required Map<String, String> options,
+    required String targetPath,
   }) async {
-    final map = await _storage.load(options);
+    final map = await _storage.load(options, targetPath);
     map[key] = value;
-    await _storage.save(map, options);
+    await _storage.save(map, options, targetPath);
   }
 
   // @override
@@ -115,9 +119,9 @@ FlutterSecureStorageWindows createFlutterSecureStorageWindows(
     FlutterSecureStorageWindows._(mapStorage);
 
 abstract class MapStorage {
-  FutureOr<Map<String, String>> load(Map<String, String> options);
-  FutureOr<void> save(Map<String, String> data, Map<String, String> options);
-  FutureOr<void> clear(Map<String, String> options);
+  FutureOr<Map<String, String>> load(Map<String, String> options, String targetPath);
+  FutureOr<void> save(Map<String, String> data, Map<String, String> options, String targetPath);
+  FutureOr<void> clear(Map<String, String> options, String targetPath);
 }
 
 const String encryptedJsonFileName = 'flutter_secure_storage.dat';
@@ -125,8 +129,8 @@ const String encryptedJsonFileName = 'flutter_secure_storage.dat';
 class DpapiJsonFileMapStorage extends MapStorage {
   DpapiJsonFileMapStorage();
 
-  FutureOr<String> _getJsonFilePath() async {
-    final appDataDirectory = await getApplicationSupportDirectory();
+  FutureOr<String> _getJsonFilePath(String targetPath) async {
+    final appDataDirectory = Directory(targetPath);
 
     return path.canonicalize(
       path.join(
@@ -137,8 +141,8 @@ class DpapiJsonFileMapStorage extends MapStorage {
   }
 
   @override
-  FutureOr<Map<String, String>> load(Map<String, String> options) async {
-    final file = File(await _getJsonFilePath());
+  FutureOr<Map<String, String>> load(Map<String, String> options, String targetPath) async {
+    final file = File(await _getJsonFilePath(targetPath));
     if (!(await file.exists())) {
       return {};
     }
@@ -238,8 +242,9 @@ class DpapiJsonFileMapStorage extends MapStorage {
   FutureOr<void> save(
     Map<String, String> data,
     Map<String, String> options,
+    String targetPath,
   ) async {
-    final file = File(await _getJsonFilePath());
+    final file = File(await _getJsonFilePath(targetPath));
     final json = jsonEncode(data);
     final plainText = utf8.encode(json);
 
@@ -303,8 +308,8 @@ class DpapiJsonFileMapStorage extends MapStorage {
   }
 
   @override
-  FutureOr<void> clear(Map<String, String> options) async {
-    final file = File(await _getJsonFilePath());
+  FutureOr<void> clear(Map<String, String> options, String targetPath) async {
+    final file = File(await _getJsonFilePath(targetPath));
     if (await file.exists()) {
       try {
         await file.delete();
